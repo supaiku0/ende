@@ -1,0 +1,16 @@
+[package]
+name = "ende"
+version = "0.1.0"
+authors = ["supaiku <supaiku@protonmail.com>"]
+
+[[bin]]
+name = "ende"
+path = "src/bin/mod.rs"
+
+[lib]
+path = "src/lib/mod.rs"
+
+[dependencies]
+gtk = { version = "0.4", features = ["v3_22"] }
+gio = "0.4"
+gdk = "0.8"
