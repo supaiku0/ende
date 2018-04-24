@@ -2,15 +2,17 @@ use super::gtk;
 use super::gdk;
 
 use gtk::*;
-use std::rc::Rc;
+use std::rc::{Rc};
 use std::sync::mpsc::{channel, Receiver};
 
 use utils;
+use dialog;
 use ende::worker::{Worker, WorkerMode};
 
 pub struct View {
 
     pub container: gtk::Box,
+    window: Rc<gtk::Window>,
     drop_label: gtk::Label,
     worker: Worker,
     receiver: Receiver<String>
@@ -19,15 +21,15 @@ pub struct View {
 
 impl View {
 
-    pub fn encryption_view() -> Rc<View> {
-        View::new(WorkerMode::Encryption)
+    pub fn encryption_view(window: Rc<gtk::Window>) -> Rc<View> {
+        View::new(window, WorkerMode::Encryption)
     }
 
-    pub fn decryption_view() -> Rc<View> {
-        View::new(WorkerMode::Decryption)
+    pub fn decryption_view(window: Rc<gtk::Window>) -> Rc<View> {
+        View::new(window, WorkerMode::Decryption)
     }
 
-    fn new(mode: WorkerMode) -> Rc<View> {
+    fn new(window: Rc<gtk::Window>, mode: WorkerMode) -> Rc<View> {
 
         let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         let targets = utils::get_drop_targets();
@@ -45,6 +47,7 @@ impl View {
 
         let view = Rc::new(View {
             container,
+            window,
             drop_label,
             worker: Worker::new(mode, tx),
             receiver: rx
@@ -66,6 +69,13 @@ impl View {
     }
 
     fn on_drop(&self, data: String) {
+
+        let dialog = dialog::Dialog::new(&self.window);
+        match dialog.run() {
+            dialog::DialogResult::Ok => {},
+            _ => return
+        };
+
         self.worker.process(&data);
 
         // HACK: update the UI while waiting for

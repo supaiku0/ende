@@ -4,9 +4,12 @@ extern crate ende;
 
 use gtk::*;
 
-mod app;
-mod view;
+#[macro_use]
 mod utils;
+mod app;
+mod views;
+mod error_view;
+mod dialog;
 
 use app::App;
 

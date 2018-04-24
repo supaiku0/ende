@@ -1,12 +1,17 @@
 use super::gtk;
 
+use ende;
+
+use std::rc::Rc;
+
 use gtk::*;
 use utils::set_class;
-use view::View;
+use views::View;
+use error_view::ErrorView;
 
 pub struct App {
 
-    pub window: Window,
+    pub window: Rc<Window>,
     header: HeaderBar,
     stack_switcher: StackSwitcher
 
@@ -14,23 +19,15 @@ pub struct App {
 
 impl App {
 
-    pub fn new() -> App {
+    pub fn new() -> Self {
         let header = HeaderBar::new();
         header.set_show_close_button(true);
         header.set_title("Ende");
         header.set_subtitle("Easy drag & drop en-/decryption");
 
-        let window = Window::new(WindowType::Toplevel);
+        let window = Rc::new(Window::new(WindowType::Toplevel));
         window.set_default_size(540, 360);
         window.set_titlebar(&header);
-
-        let button = Button::new_with_label("Start");
-        set_class(&button, "suggested-action");
-
-        button.connect_clicked(|_| {
-            println!("Clicked!");
-        });
-
 
         let settings = MenuButton::new();
         settings.set_image(&Image::new_from_icon_name("preferences-system", 0));
@@ -38,9 +35,9 @@ impl App {
         settings.set_use_popover(true);
 
         header.pack_end(&settings);
-        header.pack_end(&button);
 
         let stack = Stack::new();
+
         let stack_switcher = StackSwitcher::new();
         stack_switcher.set_stack(&stack);
         header.pack_start(&stack_switcher);
@@ -50,13 +47,26 @@ impl App {
 
         stack.add_titled(&encrypt_page, "encrypt", "Encrypt");
         stack.add_titled(&decrypt_page, "decrypt", "Decrypt");
-        stack.set_visible_child_full("encrypt", StackTransitionType::None);
 
-        let encryption_view = View::encryption_view();
-        let decryption_view = View::decryption_view();
+        let encryption_view = View::encryption_view(window.clone());
+        let decryption_view = View::decryption_view(window.clone());
 
         encrypt_page.pack1(&encryption_view.container, true, true);
         decrypt_page.pack1(&decryption_view.container, true, true);
+
+        let result = ende::check_required_binaries();
+        if result.is_err() {
+
+            let error_page = Paned::new(Orientation::Horizontal);
+            let error_view = ErrorView::new(result.clone().unwrap_err());
+            error_page.pack1(&error_view.container, true, true);
+            error_page.show();
+
+            stack.add_named(&error_page, "error");
+
+        } else {
+            stack_switcher.show_all();
+        }
 
         window.add(&stack);
 
@@ -64,6 +74,12 @@ impl App {
             gtk::main_quit();
             Inhibit(false)
         });
+
+        window.connect_show(clone!(stack_switcher => move |_| {
+            if result.is_err() {
+                stack_switcher.hide();
+            }
+        }));
 
         App {
             window,

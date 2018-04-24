@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::thread;
 use std::sync::mpsc::{Sender};
+use path_helper;
 
 #[derive(Clone)]
 pub enum WorkerMode {
@@ -46,14 +47,17 @@ impl Worker {
 impl ThreadWorker {
 
     pub fn process(&self, payload: &String) {
-        let paths = self.get_paths(payload);
+        let paths = path_helper::get_paths(payload);
+        if paths.is_empty() {
+            self.send("BRLRLRLR".to_owned());
+            self.send("DONE".to_owned());
+        }
 
         match paths.len() {
             0 => return,
             1 => self.process_path(paths.first().unwrap()),
             _ => self.process_batch(&paths)
         }
-
 
         self.send("DONE".to_owned());
     }
@@ -68,29 +72,6 @@ impl ThreadWorker {
         let formatted = format!("Processing paths {:?}", paths);
         println!("{:?}", formatted);
         self.send(formatted);
-    }
-
-    fn get_paths(&self, data: &String) -> Vec<PathBuf> {
-
-        let split: Vec<String> = data
-            .split('\n')
-            .filter_map(|s| if !s.is_empty() { return Some(s) } else { return None })
-            .map(|s| s.to_owned())
-            .collect();
-
-        let mut paths: Vec<PathBuf> = vec![];
-        for item in split {
-            let mut line = item.clone();
-
-            if line.starts_with("file://") {
-                line = line.replace("file://", "");
-            }
-
-            let path = PathBuf::from(line);
-            paths.push(path);
-        }
-
-        paths
     }
 
     fn send(&self, data: String) {
