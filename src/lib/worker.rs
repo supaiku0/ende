@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::thread;
 use std::sync::mpsc::{Sender};
-use path_helper;
 
 #[derive(Clone)]
 pub enum WorkerMode {
@@ -29,16 +28,19 @@ impl Worker {
         }
     }
 
-    pub fn process(&self, data: &String) {
+    pub fn process(&self, paths: Vec<PathBuf>, passphrase: String) {
+        assert!(!paths.is_empty());
+        assert!(!passphrase.is_empty());
+
+        println!("Got passphrase: {:?}", passphrase);
 
         let worker = ThreadWorker {
             mode: self.mode.clone(),
             sender: self.sender.clone()
         };
 
-        let payload = data.clone();
         thread::spawn(move || {
-            worker.process(&payload)
+            worker.process(paths, passphrase)
         });
     }
 
@@ -46,12 +48,7 @@ impl Worker {
 
 impl ThreadWorker {
 
-    pub fn process(&self, payload: &String) {
-        let paths = path_helper::get_paths(payload);
-        if paths.is_empty() {
-            self.send("BRLRLRLR".to_owned());
-            self.send("DONE".to_owned());
-        }
+    pub fn process(&self, paths: Vec<PathBuf>, passphrase: String) {
 
         match paths.len() {
             0 => return,

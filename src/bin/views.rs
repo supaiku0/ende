@@ -8,6 +8,7 @@ use std::sync::mpsc::{channel, Receiver};
 use utils;
 use dialog;
 use ende::worker::{Worker, WorkerMode};
+use ende::path_helper;
 
 pub struct View {
 
@@ -69,14 +70,21 @@ impl View {
     }
 
     fn on_drop(&self, data: String) {
+        let paths = path_helper::get_paths(&data);
+        if paths.is_empty() {
+            self.drop_label.set_text(format!("Failed to parse paths from input:\n{:?}", data).as_str());
+            return;
+        }
 
         let dialog = dialog::Dialog::new(&self.window);
-        match dialog.run() {
-            dialog::DialogResult::Ok => {},
-            _ => return
-        };
+        if let Some(passphrase) = dialog.run() {
+            assert!(!passphrase.is_empty());
+            self.worker.process(paths, passphrase);
 
-        self.worker.process(&data);
+        } else {
+            self.drop_label.set_text("Invalid passphrase.");
+            return;
+        }
 
         // HACK: update the UI while waiting for
         // worker messages.
@@ -102,5 +110,4 @@ impl View {
             gtk::main_iteration();
         }
     }
-
 }
