@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::thread;
 use std::sync::mpsc::{Sender};
+use archiver;
 
 #[derive(Clone)]
 pub enum WorkerMode {
@@ -9,7 +10,6 @@ pub enum WorkerMode {
 }
 
 pub struct Worker {
-
     mode: WorkerMode,
     sender: Sender<String>
 }
@@ -50,24 +50,24 @@ impl ThreadWorker {
 
     pub fn process(&self, paths: Vec<PathBuf>, passphrase: String) {
 
-        match paths.len() {
-            0 => return,
-            1 => self.process_path(paths.first().unwrap()),
-            _ => self.process_batch(&paths)
+        let target_path;
+        if paths.len() > 1 {
+            target_path = archiver::create_archive(&paths);
+        } else {
+            target_path = paths.first().unwrap().clone();
         }
 
+        self.process_file(&target_path, &passphrase);
         self.send("DONE".to_owned());
     }
 
-    fn process_path(&self, path: &PathBuf) {
-        let formatted = format!("Processing single path {:?}", path);
+    fn process_file(&self, path: &PathBuf, passphrase: &String) {
+        let formatted = format!("Processing file {:?}", path);
         println!("{:?}", formatted);
-        self.send(formatted);
-    }
 
-    fn process_batch(&self, paths: &Vec<PathBuf>) {
-        let formatted = format!("Processing paths {:?}", paths);
-        println!("{:?}", formatted);
+
+
+
         self.send(formatted);
     }
 

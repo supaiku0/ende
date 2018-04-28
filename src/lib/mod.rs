@@ -1,7 +1,8 @@
 use std::process;
 
 pub mod worker;
-pub mod path_helper;
+pub mod archiver;
+mod gpg;
 
 static REQUIRED_EXECUTABLES: &'static [&'static str] = &["gpg", "tar"];
 

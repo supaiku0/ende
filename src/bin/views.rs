@@ -8,7 +8,7 @@ use std::sync::mpsc::{channel, Receiver};
 use utils;
 use dialog;
 use ende::worker::{Worker, WorkerMode};
-use ende::path_helper;
+use ende::archiver;
 
 pub struct View {
 
@@ -70,7 +70,7 @@ impl View {
     }
 
     fn on_drop(&self, data: String) {
-        let paths = path_helper::get_paths(&data);
+        let paths = archiver::get_paths(&data);
         if paths.is_empty() {
             self.drop_label.set_text(format!("Failed to parse paths from input:\n{:?}", data).as_str());
             return;
