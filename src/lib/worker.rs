@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::thread;
 use std::sync::mpsc::{Sender};
+use gpg;
 use archiver;
 
 #[derive(Clone)]
@@ -65,8 +66,15 @@ impl ThreadWorker {
         let formatted = format!("Processing file {:?}", path);
         println!("{:?}", formatted);
 
+        match self.mode {
+            WorkerMode::Encryption => {
+                gpg::encrypt(path, passphrase);
+            },
 
-
+            WorkerMode::Decryption => {
+                gpg::decrypt(path, passphrase);
+            }
+        }
 
         self.send(formatted);
     }
