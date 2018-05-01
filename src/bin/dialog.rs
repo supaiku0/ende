@@ -85,7 +85,7 @@ impl Dialog {
     fn on_text_input(&self) {
         let input1 = self.entry.get_text().expect("Failed to get text of entry.");
         let input2 = self.entry_confirm.get_text().expect("Failed to get text of entry.");
-        println!("{:?} == {:?}", input1, input2);
+        //println!("{:?} == {:?}", input1, input2);
         self.button_ok.set_sensitive(input1.len() > 1 && input1 == input2);
     }
 
