@@ -51,32 +51,39 @@ impl ThreadWorker {
 
     pub fn process(&self, paths: Vec<PathBuf>, passphrase: String) {
 
-        let target_path;
-        if paths.len() > 1 {
-            target_path = archiver::create_archive(&paths);
-        } else {
-            target_path = paths.first().unwrap().clone();
-        }
-
-        self.process_file(&target_path, &passphrase);
-        self.send("DONE".to_owned());
-    }
-
-    fn process_file(&self, path: &PathBuf, passphrase: &String) {
-        let formatted = format!("Processing file {:?}", path);
-        println!("{:?}", formatted);
-
         match self.mode {
             WorkerMode::Encryption => {
-                gpg::encrypt(path, passphrase);
+                let target_path;
+                if paths.len() > 1 {
+                    target_path = archiver::create_archive(&paths);
+                } else {
+                    target_path = paths.first().unwrap().clone();
+                }
+                self.encrypt_file(&target_path, &passphrase);
             },
 
             WorkerMode::Decryption => {
-                gpg::decrypt(path, passphrase);
+                self.decrypt_files(&paths, &passphrase);
             }
         }
 
+        self.send("DONE".to_owned());
+    }
+
+    fn encrypt_file(&self, path: &PathBuf, passphrase: &String) {
+        let formatted = format!("Encrypting file {:?}", path);
+        println!("{:?}", formatted);
+        gpg::encrypt(path, passphrase);
         self.send(formatted);
+    }
+
+    fn decrypt_files(&self, paths: &Vec<PathBuf>, passphrase: &String) {
+        paths.into_iter().for_each(|path| {
+            let formatted = format!("Decrypting file {:?}", path);
+            println!("{:?}", formatted);
+            gpg::decrypt(&path, &passphrase);
+            self.send(formatted);
+        });
     }
 
     fn send(&self, data: String) {
