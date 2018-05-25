@@ -20,7 +20,8 @@ pub struct View {
     spinner: gtk::Spinner,
     info_label: gtk::Label,
     worker: Worker,
-    receiver: Receiver<String>
+    receiver: Receiver<String>,
+    mode: WorkerMode
 }
 
 impl View {
@@ -63,8 +64,9 @@ impl View {
             drop_label,
             spinner,
             info_label,
-            worker: Worker::new(mode, tx),
-            receiver: rx
+            worker: Worker::new(mode.clone(), tx),
+            receiver: rx,
+            mode
         });
 
         {
@@ -94,7 +96,7 @@ impl View {
         }
 
         let app = self.app.take();
-        let dialog = dialog::Dialog::new(&app.clone().unwrap().window);
+        let dialog = dialog::Dialog::new(&app.clone().unwrap().window, self.mode.clone());
         self.app.set(app);
 
         if let Some(passphrase) = dialog.run() {

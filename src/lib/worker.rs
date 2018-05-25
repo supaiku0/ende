@@ -4,7 +4,7 @@ use std::sync::mpsc::{Sender};
 use gpg;
 use archiver;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum WorkerMode {
     Encryption,
     Decryption

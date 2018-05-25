@@ -3,13 +3,16 @@ extern crate gtk;
 use gtk::*;
 use utils;
 
+use ende::worker::WorkerMode;
+
 #[derive(Clone)]
 pub struct Dialog {
     dialog: gtk::MessageDialog,
     entry: gtk::Entry,
     entry_confirm: gtk::Entry,
     button_ok: gtk::Widget,
-    button_cancel: gtk::Widget
+    button_cancel: gtk::Widget,
+    mode: WorkerMode
 }
 
 enum DialogResult {
@@ -19,14 +22,14 @@ enum DialogResult {
 
 impl Dialog {
 
-    pub fn new(parent: &gtk::Window) -> Self {
+    pub fn new(parent: &gtk::Window, mode: WorkerMode) -> Self {
 
         let dialog = gtk::MessageDialog::new(
             Some(parent),
             gtk::DialogFlags::MODAL | gtk::DialogFlags::USE_HEADER_BAR,
             gtk::MessageType::Info,
             gtk::ButtonsType::None,
-            "Choose a passphrase:"
+            "Passphrase:"
         );
 
         let button_ok = dialog.add_button("Continue", -5);
@@ -45,12 +48,14 @@ impl Dialog {
         entry_confirm.set_invisible_char('*');
         entry_confirm.set_size_request(250, 0);
 
-        content_area.pack_end(&entry_confirm, false, false, 0);
+        if mode == WorkerMode::Encryption {
+            content_area.pack_end(&entry_confirm, false, false, 0);
+        }
         content_area.pack_end(&entry, false, false, 0);
 
         content_area.show_all();
 
-        let dialog = Dialog { dialog, entry, entry_confirm, button_ok, button_cancel };
+        let dialog = Dialog { dialog, entry, entry_confirm, button_ok, button_cancel, mode };
         dialog.entry.connect_key_release_event(clone!(dialog => move |_, _| {
             dialog.on_text_input();
             gtk::Inhibit(false)
@@ -86,7 +91,9 @@ impl Dialog {
         let input1 = self.entry.get_text().expect("Failed to get text of entry.");
         let input2 = self.entry_confirm.get_text().expect("Failed to get text of entry.");
         //println!("{:?} == {:?}", input1, input2);
-        self.button_ok.set_sensitive(input1.len() > 1 && input1 == input2);
+
+        let input_equal = self.mode == WorkerMode::Decryption || input1 == input2;
+        self.button_ok.set_sensitive(input1.len() > 1 && input_equal);
     }
 
 }
